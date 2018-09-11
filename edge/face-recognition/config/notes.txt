@@ -1,0 +1,8 @@
+"C:/Users/florian/Repositories/fog-computing/edge/face-recognition/config/certs/cloud.pem.crt"
+"C:/Users/florian/Repositories/fog-computing/edge/face-recognition/config/certs/cloud.pem.key"
+"C:/Users/florian/Repositories/fog-computing/edge/face-recognition/config/certs/AmazonRootCA1.pem"
+
+
+cred_response = requests.get("https://c1i2kr7g7asr7y.credentials.iot.eu-central-1.amazonaws.com/role-aliases/AWS-Service-Access-Role-Alias/credentials", cert=("C:/Users/florian/Repositories/fog-computing/edge/face-recognition/config/certs/cloud.pem.crt","C:/Users/florian/Repositories/fog-computing/edge/face-recognition/config/certs/cloud.pem.key"), verify="C:/Users/florian/Repositories/fog-computing/edge/face-recognition/config/certs/AmazonRootCA1.pem")
+
+s3 = boto3.client("s3", aws_access_key_id=creds["accessKeyId"], aws_secret_access_key=creds["secretAccessKey"], aws_session_token=creds["sessionToken"])

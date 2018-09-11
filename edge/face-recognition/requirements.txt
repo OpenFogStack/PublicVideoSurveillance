@@ -1,0 +1,14 @@
+face_recognition_models
+Click
+dlib
+numpy
+Pillow
+scipy
+picamera[array]
+AWSIoTPythonSDK
+scikit-learn
+opencv-python
+isodate
+boto3
+requests
+ffmpeg-python

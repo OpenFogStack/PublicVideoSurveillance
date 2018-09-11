@@ -1,0 +1,1006 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+# stupid hack to be able to use ${self:custom.service.name} to get the service name
+service: &service
+  name: watch-your-faces
+
+frameworkVersion: ">=1.2.0 <2.0.0"
+
+plugins:
+  - serverless-domain-manager
+  - serverless-s3-sync
+  - serverless-s3-local
+  - serverless-dynamodb-local
+  - serverless-offline
+  - serverless-plugin-existing-s3
+  - serverless-plugin-optimize
+  - serverless-plugin-split-stacks
+  - serverless-dynamodb-autoscaling
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: ${opt:stage, 'dev'}
+  region: eu-central-1
+  # These variables are accessible in js with process.env.XYZ
+  environment:
+    AUTH0_CLIENT_ID: ${file(./frontend-api/authentication/credentials.json):AUTH0_CLIENT_ID}
+    AUTH0_CLIENT_PUBLIC_KEY: ${file(./frontend-api/authentication/credentials.json):AUTH0_CLIENT_PUBLIC_KEY}
+    AUTH0_USER_API_SECRET: ${env:AUTH0_USER_API_SECRET}
+    DYNAMODB_TABLE_LOG: ${self:custom.env.DYNAMODB_TABLE_BASE}-log
+    DYNAMODB_TABLE_SYSTEM_LOG: ${self:custom.env.DYNAMODB_TABLE_BASE}-system-log
+    DYNAMODB_TABLE_POIS: ${self:custom.env.DYNAMODB_TABLE_BASE}-pois
+    DYNAMODB_TABLE_EDGES: ${self:custom.env.DYNAMODB_TABLE_BASE}-edges
+    DYNAMODB_TABLE_ITEMS_TO_APPROVE: ${self:custom.env.DYNAMODB_TABLE_BASE}-items-to-approve
+    DYNAMODB_TABLE_USER_CACHE: ${self:custom.env.DYNAMODB_TABLE_BASE}-user-cache
+    DYNAMODB_TABLE_MODEL_HELPER: ${self:custom.env.DYNAMODB_TABLE_BASE}-model-helper
+    DYNAMODB_TABLE_LOG_HELPER: ${self:custom.env.DYNAMODB_TABLE_BASE}-log-helper
+    DYNAMODB_TABLE_LOG_INDEX_USER_ACTION: "UserActionLogUserActionGSI"
+    DYNAMODB_TABLE_LOG_INDEX_RESOURCE_ACTION: "UserActionLogResourceActionGSI"
+    DYNAMODB_TABLE_LOG_INDEX_HASH_CHAIN: "UserActionLogHashChainGSI"
+    DYNAMODB_TABLE_SYSTEM_LOG_INDEX_COMPONENT_ACTION: "SystemActionLogComponentActionGSI"
+    DYNAMODB_TABLE_SYSTEM_LOG_INDEX_HASH_CHAIN: "SystemActionLogHashChainGSI"
+    OFFLINE_DYNAMODB_PORT: "8080"
+    OFFLINE_S3_PORT: "5000"
+    POI_IMAGES_BUCKET: ${self:custom.env.DOMAIN_NAME}-pois-images
+    MODEL_BUCKET: ${self:custom.env.DOMAIN_NAME}-models
+    EDGE_TEMP_BUCKET: ${self:custom.env.DOMAIN_NAME}-edge-temp
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    LAMBDA_PREFIX: ${self:custom.service.name}-${self:provider.stage}
+  iamRoleStatements: # permissions for all functions
+    - Effect: Allow
+      Action:
+        - batch:SubmitJob
+      Resource: "arn:aws:batch:eu-central-1:*:*"
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - "*"
+    - Effect: Allow # DynamoDB Permissions for functions
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_LOG}*"
+    - Effect: Allow # DynamoDB Permissions for functions
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_SYSTEM_LOG}*"
+    - Effect: Allow # DynamoDB Permissions for functions
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_POIS}*"
+    - Effect: Allow # DynamoDB Permissions for functions
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_USER_CACHE}*"
+    - Effect: Allow # DynamoDB Permissions for functions
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_EDGES}*"
+    - Effect: Allow # DynamoDB Permissions for functions
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_ITEMS_TO_APPROVE}*"
+    - Effect: Allow # DynamoDB Permissions for functions
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_MODEL_HELPER}*"
+    - Effect: Allow # DynamoDB Permissions for functions
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_LOG_HELPER}*"
+    - Effect: Allow # DynamoDB Permissions for functions
+      Action:
+        - s3:PutObject
+        - s3:PutObjectAcl
+        - s3:GetObject
+        - s3:DeleteObject
+        - s3:ListBucket
+      Resource:
+        - "arn:aws:s3:::${self:custom.env.DOMAIN_NAME}-*"
+        - "arn:aws:s3:::${self:custom.env.DOMAIN_NAME}-*/*"
+    - Effect: Allow
+      Action:
+        - iot:Publish
+      Resource:
+        - "arn:aws:iot:eu-central-1:693188760610:topic/wyf/edge-configuration"
+        - "arn:aws:iot:eu-central-1:693188760610:topic/wyf/face-model"
+        - "arn:aws:iot:eu-central-1:693188760610:topic/${self:provider.stage}-wyf/face-model"
+        - "arn:aws:iot:eu-central-1:693188760610:topic/${self:provider.stage}-wyf/face-configuration"
+    - Effect: Allow
+      Action:
+        - iot:*
+      Resource:
+        - "*"
+
+
+custom:
+# stupid hack to be able to use ${self:custom.service.name} to get the service name
+  service: *service
+  env:
+    BASE_DOMAIN_NAME: watchyourfac.es
+    DOMAIN_NAME: ${self:provider.stage}.${self:custom.env.BASE_DOMAIN_NAME}
+    API_DOMAIN_NAME: ${self:provider.stage}.api.${self:custom.env.BASE_DOMAIN_NAME}
+    API_BASE_PATH: 'api'
+    DYNAMODB_TABLE_BASE: ${self:custom.service.name}-${self:provider.stage}
+  customDomain:
+    domainName: ${self:custom.env.API_DOMAIN_NAME}
+    basePath: ${self:custom.env.API_BASE_PATH}
+    stage: ${self:provider.stage}
+    certificateName: '*.api.watchyourfac.es'
+    createRoute53Record: true
+  s3Sync:
+    - bucketName: ${self:custom.env.DOMAIN_NAME}
+      localDir: frontend/dist
+  serverless-offline:
+    skipCacheInvalidation: true
+    prefix: ${self:custom.env.API_BASE_PATH}
+    port: 4000
+  dynamodb:
+    start:
+      port: ${self:provider.environment.OFFLINE_DYNAMODB_PORT}
+      inMemory: true
+      migrate: true
+  s3:
+    port: ${self:provider.environment.OFFLINE_S3_PORT}
+    directory: /tmp/s3
+  optimize:
+    exclude: ["aws-sdk"]
+  splitStacks:
+    perFunction: true
+    perType: false
+  capacities:
+  - table: LogTable  # DynamoDB Resource
+    index:              # List or single index name
+      - ${self:provider.environment.DYNAMODB_TABLE_LOG_INDEX_USER_ACTION}
+      - ${self:provider.environment.DYNAMODB_TABLE_LOG_INDEX_RESOURCE_ACTION}
+      - ${self:provider.environment.DYNAMODB_TABLE_LOG_INDEX_HASH_CHAIN}
+    read:
+      minimum: 1        # Minimum read capacity
+      maximum: 10     # Maximum read capacity
+      usage: 0.9       # Targeted usage percentage
+    write:
+      minimum: 1       # Minimum write capacity
+      maximum: 10      # Maximum write capacity
+      usage: 0.9        # Targeted usage percentage
+  - table: SystemLogTable  # DynamoDB Resource
+    index:              # List or single index name
+      - ${self:provider.environment.DYNAMODB_TABLE_SYSTEM_LOG_INDEX_COMPONENT_ACTION}
+      - ${self:provider.environment.DYNAMODB_TABLE_SYSTEM_LOG_INDEX_HASH_CHAIN}
+    read:
+      minimum: 1        # Minimum read capacity
+      maximum: 10     # Maximum read capacity
+      usage: 0.9       # Targeted usage percentage
+    write:
+      minimum: 1       # Minimum write capacity
+      maximum: 10      # Maximum write capacity
+      usage: 0.9        # Targeted usage percentage
+  - table: PoisTable  # DynamoDB Resource
+    read:
+      minimum: 1        # Minimum read capacity
+      maximum: 10     # Maximum read capacity
+      usage: 0.9       # Targeted usage percentage
+    write:
+      minimum: 1       # Minimum write capacity
+      maximum: 10      # Maximum write capacity
+      usage: 0.9        # Targeted usage percentage
+  - table: UserCacheTable  # DynamoDB Resource
+    read:
+      minimum: 1        # Minimum read capacity
+      maximum: 10     # Maximum read capacity
+      usage: 0.9       # Targeted usage percentage
+    write:
+      minimum: 1       # Minimum write capacity
+      maximum: 10      # Maximum write capacity
+      usage: 0.9        # Targeted usage percentage
+  - table: EdgesTable  # DynamoDB Resource
+    index:
+      - ${self:provider.environment.DYNAMODB_TABLE_EDGES}_SI
+    read:
+      minimum: 1        # Minimum read capacity
+      maximum: 10     # Maximum read capacity
+      usage: 0.9       # Targeted usage percentage
+    write:
+      minimum: 1       # Minimum write capacity
+      maximum: 10      # Maximum write capacity
+      usage: 0.9        # Targeted usage percentage
+
+package:
+  exclude:
+    - frontend/**
+
+functions:
+  auth0Auth:
+    handler: frontend-api/authentication/auth.auth
+    cors: true
+  edgeHandler:
+    handler: edge-api/handler.edges
+    events:
+    - http:
+        path: edge #Get All
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: edge/{id}
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: edge/{id}
+        method: delete
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: edge
+        method: post
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: edge/{id}
+        method: put
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  approvalHandler:
+    handler: approval-api/handler.approvalitems
+    events:
+    - http:
+        path: approvalitems
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: approvalitems/{id}
+        method: put
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  requestHandlerOfUser:
+    handler: approval-api/handler.requests
+    events:
+    - http:
+        path: requests
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  frontendPoisCollectionHandler:
+    handler: frontend-api/pois/handler.collection
+    events:
+    - http:
+        path: pois
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: pois
+        method: post
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  frontendPoisItemHandler:
+    handler: frontend-api/pois/handler.item
+    events:
+    - http:
+        path: pois/{id}
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: pois/{id}
+        method: delete
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: pois/{id}
+        method: put
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  poiUsersHandler:
+    handler: frontend-api/pois/handler.users
+    events:
+    - http:
+        path: pois/{id}/users
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: pois/{id}/users/{userId}
+        method: delete
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: pois/{id}/users
+        method: put
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  poiImagesHandler:
+    handler: frontend-api/pois/handler.images
+    events:
+    - http:
+        path: pois/{id}/images
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: pois/{id}/images/{imageId}
+        method: delete
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  poiFootagesHandler:
+    handler: frontend-api/pois/handler.footages
+    events:
+    - http:
+        path: pois/{id}/footages
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+    - http:
+        path: pois/{id}/footages/{imageId}
+        method: delete
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  imagesHandler:
+    handler: frontend-api/images/handler.images
+    events:
+    - http:
+        path: images
+        method: post
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  usersCollectionHandler:
+      handler: frontend-api/users/handler.collection
+      events:
+      - http:
+          path: users
+          method: get
+          authorizer:
+            name: auth0Auth
+            resultTtlInSeconds: 0
+          cors: true
+      - http:
+          path: users
+          method: post
+          authorizer:
+            name: auth0Auth
+            resultTtlInSeconds: 0
+          cors: true
+  cachedInternalUserHandler:
+      handler: frontend-api/users/handler.cacheduser
+  usersItemHandler:
+      handler: frontend-api/users/handler.item
+      events:
+      - http:
+          path: users/{id}
+          method: get
+          authorizer:
+            name: auth0Auth
+            resultTtlInSeconds: 0
+          cors: true
+      - http:
+          path: users/{id}
+          method: put
+          authorizer:
+            name: auth0Auth
+            resultTtlInSeconds: 0
+          cors: true
+      - http:
+          path: users/{id}
+          method: delete
+          authorizer:
+            name: auth0Auth
+            resultTtlInSeconds: 0
+          cors: true
+  usersRolesHandler:
+        handler: frontend-api/users/handler.roles
+        events:
+        - http:
+            path: users/{id}/roles
+            method: get
+            authorizer:
+              name: auth0Auth
+              resultTtlInSeconds: 0
+            cors: true
+        - http:
+            path: users/{id}/roles
+            method: patch
+            authorizer:
+              name: auth0Auth
+              resultTtlInSeconds: 0
+            cors: true
+        - http:
+            path: users/{id}/roles
+            method: delete
+            authorizer:
+              name: auth0Auth
+              resultTtlInSeconds: 0
+            cors: true
+  rolesCollectionHandler:
+        handler: frontend-api/roles/handler.collection
+        events:
+        - http:
+            path: roles
+            method: get
+            authorizer:
+              name: auth0Auth
+              resultTtlInSeconds: 0
+            cors: true
+        - http:
+            path: roles
+            method: post
+            authorizer:
+              name: auth0Auth
+              resultTtlInSeconds: 0
+            cors: true
+  rolesItemHandler:
+        handler: frontend-api/roles/handler.item
+        events:
+        - http:
+            path: roles/{id}
+            method: get
+            authorizer:
+              name: auth0Auth
+              resultTtlInSeconds: 0
+            cors: true
+        - http:
+            path: roles/{id}
+            method: put
+            authorizer:
+              name: auth0Auth
+              resultTtlInSeconds: 0
+            cors: true
+        - http:
+            path: roles/{id}
+            method: delete
+            authorizer:
+              name: auth0Auth
+              resultTtlInSeconds: 0
+            cors: true
+  startModelTrainingInBackend:
+    handler: modeltraining/training/triggerModelTraining.triggerTraining
+  triggerModelTrainingInBackend:
+    handler: modeltraining/training/modeltraining.startTraining
+    events:
+      - schedule: rate(5 minutes)
+  outgoingEdgeData:
+    handler: messaging-api/handler.outgoing
+    events:
+      - schedule: rate(1 minute)
+  incomingEdgeData:
+    handler: messaging-api/handler.incoming
+    events:
+      - iot:
+          sql: "SELECT * FROM 'wyf/face-recognition'"
+  logAllUserActionLogsHandler:
+    handler: secure-log-api/loghandler.alluseractionlogs
+    events:
+    - http:
+        path: logs
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  logAllSystemActionLogsHandler:
+   handler: secure-log-api/loghandler.allsystemactionlogs
+   events:
+   - http:
+       path: system-logs
+       method: get
+       authorizer:
+         name: auth0Auth
+         resultTtlInSeconds: 0
+       cors: true
+  logUserActionLogsResourceTypeHandler:
+    handler: secure-log-api/loghandler.useractionlogsresourcetype
+    events:
+    - http:
+        path: logs/{type}
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  logUserActionLogsResourceHandler:
+    handler: secure-log-api/loghandler.useractionlogsresource
+    events:
+    - http:
+        path: logs/{type}/{id}
+        method: get
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  logUserActionLogsUserHandler:
+   handler: secure-log-api/loghandler.useractionlogsuser
+   events:
+   - http:
+       path: user-logs/{id}
+       method: get
+       authorizer:
+         name: auth0Auth
+         resultTtlInSeconds: 0
+       cors: true
+  logUserLogin:
+    handler: secure-log-api/loghandler.userlogin
+    events:
+    - http:
+        path: user-logs/login
+        method: post
+        authorizer:
+          name: auth0Auth
+          resultTtlInSeconds: 0
+        cors: true
+  logSystemActionLogsComponentTypeHandler:
+   handler: secure-log-api/loghandler.systemactionlogscomponenttype
+   events:
+   - http:
+       path: system-logs/{type}
+       method: get
+       authorizer:
+         name: auth0Auth
+         resultTtlInSeconds: 0
+       cors: true
+  logSystemActionLogsComponentHandler:
+   handler: secure-log-api/loghandler.systemactionlogscomponent
+   events:
+   - http:
+       path: system-logs/{type}/{id}
+       method: get
+       authorizer:
+         name: auth0Auth
+         resultTtlInSeconds: 0
+       cors: true
+  logVerifyUserActionLogHandler:
+   handler: secure-log-api/loghandler.verifyuserlog
+   events:
+   - http:
+       path: verify-log/log/{hash}
+       method: get
+       authorizer:
+         name: auth0Auth
+         resultTtlInSeconds: 0
+       cors: true
+  logVerifySystemActionLogHandler:
+   handler: secure-log-api/loghandler.verifysystemlog
+   events:
+   - http:
+       path: verify-log/system-log/{hash}
+       method: get
+       authorizer:
+         name: auth0Auth
+         resultTtlInSeconds: 0
+       cors: true
+
+resources:
+  Resources:
+    ModelHelperTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_MODEL_HELPER}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    LogHelperTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_LOG_HELPER}
+        AttributeDefinitions:
+          - AttributeName: "table"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "table"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    ApprovalWorkflowTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_ITEMS_TO_APPROVE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    LogTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_LOG}
+        AttributeDefinitions:
+          - AttributeName: "Id"
+            AttributeType: S
+          - AttributeName: "UserId"
+            AttributeType: "S"
+          - AttributeName: "ResourceType"
+            AttributeType: "S"
+          - AttributeName: "ResourceId"
+            AttributeType: "S"
+          - AttributeName: "Hash"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "Id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+        - IndexName: ${self:provider.environment.DYNAMODB_TABLE_LOG_INDEX_USER_ACTION}
+          KeySchema:
+          - AttributeName: "UserId"
+            KeyType: "HASH"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+        - IndexName: ${self:provider.environment.DYNAMODB_TABLE_LOG_INDEX_RESOURCE_ACTION}
+          KeySchema:
+          - AttributeName: "ResourceType"
+            KeyType: "HASH"
+          - AttributeName: "ResourceId"
+            KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+        - IndexName: ${self:provider.environment.DYNAMODB_TABLE_LOG_INDEX_HASH_CHAIN}
+          KeySchema:
+          - AttributeName: "Hash"
+            KeyType: "HASH"
+          Projection:
+            NonKeyAttributes:
+            - "Link"
+            ProjectionType: "INCLUDE"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+
+    SystemLogTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_SYSTEM_LOG}
+        AttributeDefinitions:
+          - AttributeName: "Id"
+            AttributeType: "S"
+          - AttributeName: "ComponentId"
+            AttributeType: "S"
+          - AttributeName: "ComponentType"
+            AttributeType: "S"
+          - AttributeName: "Level"
+            AttributeType: "S"
+          - AttributeName: "Hash"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "Id"
+            KeyType: "HASH"
+          - AttributeName: "Level"
+            KeyType: "RANGE"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+        - IndexName: ${self:provider.environment.DYNAMODB_TABLE_SYSTEM_LOG_INDEX_COMPONENT_ACTION}
+          KeySchema:
+          - AttributeName: "ComponentType"
+            KeyType: "HASH"
+          - AttributeName: "ComponentId"
+            KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+        - IndexName: ${self:provider.environment.DYNAMODB_TABLE_SYSTEM_LOG_INDEX_HASH_CHAIN}
+          KeySchema:
+          - AttributeName: "Hash"
+            KeyType: "HASH"
+          Projection:
+            NonKeyAttributes:
+            - "Link"
+            ProjectionType: "INCLUDE"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+
+    PoisTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_POIS}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    UserCacheTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_USER_CACHE}
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    EdgesTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Delete
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_EDGES}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: createdBy
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+        - IndexName: ${self:provider.environment.DYNAMODB_TABLE_EDGES}_SI
+          KeySchema:
+          - AttributeName: "createdBy"
+            KeyType: "HASH"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+
+    #Create Bucket for POI_IMAGES_BUCKET
+    #Init S3-Event-Handler for POI_IMAGES_BUCKET
+    #The Event-Handler is required for the model training in the backend
+    S3BucketStartModelTrainingInBackend:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Delete
+      DependsOn:
+        - StartModelTrainingInBackendLambdaPermissionS3BucketS3
+      Properties:
+        BucketName: ${self:custom.env.DOMAIN_NAME}-pois-images
+        NotificationConfiguration:
+          LambdaConfigurations:
+            - Event: 's3:ObjectCreated:*'
+              Function:
+                'Fn::GetAtt': [ StartModelTrainingInBackendLambdaFunction, Arn ]
+            - Event: 's3:ObjectRemoved:*'
+              Function:
+                'Fn::GetAtt': [ StartModelTrainingInBackendLambdaFunction, Arn ]
+    StartModelTrainingInBackendLambdaPermissionS3BucketS3:
+      DependsOn:
+        - StartModelTrainingInBackendLambdaFunction
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          'Fn::GetAtt': [ StartModelTrainingInBackendLambdaFunction, Arn ]
+        Action: 'lambda:InvokeFunction'
+        Principal: 's3.amazonaws.com'
+        SourceArn: { 'Fn::Join' : ['', ['arn:aws:s3:::', '${self:custom.env.DOMAIN_NAME}-pois-images']]  }
+
+    EdgeTempBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Delete
+      Properties:
+        BucketName: ${self:provider.environment.EDGE_TEMP_BUCKET}
+    ModelsBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Delete
+      Properties:
+        BucketName: ${self:provider.environment.MODEL_BUCKET}
+    FrontendBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Delete
+      Properties:
+        BucketName: ${self:custom.env.DOMAIN_NAME}
+        AccessControl: PublicRead
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+    FrontendBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: FrontendBucket
+        PolicyDocument:
+          Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource:
+              Fn::Join:
+                - ''
+                - - 'arn:aws:s3:::'
+                  - Ref: FrontendBucket
+                  - '/*'
+    FrontendCDN:
+      Type: AWS::CloudFront::Distribution
+      DependsOn:
+        - FrontendBucket
+        - FrontendBucketPolicy
+      Properties:
+        DistributionConfig:
+          Comment: Cloudfront Distribution pointing to S3 bucket
+          Origins:
+          - DomainName:
+              Fn::Select:
+              - 1
+              - Fn::Split:
+                - '//'
+                - Fn::GetAtt:
+                  - FrontendBucket
+                  - WebsiteURL
+            Id: ${self:custom.service.name}-${self:provider.stage}-Frontend
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+              OriginSSLProtocols:
+                - TLSv1.2
+                - TLSv1.1
+                - TLSv1
+          Enabled: true
+          HttpVersion: 'http2'
+          DefaultRootObject: index.html
+          CustomErrorResponses:
+            - ErrorCode: 404
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+          Aliases:
+          - ${self:custom.env.DOMAIN_NAME}
+          DefaultCacheBehavior:
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            Compress: true
+            TargetOriginId: ${self:custom.service.name}-${self:provider.stage}-Frontend
+            ForwardedValues:
+              QueryString: true
+              Cookies:
+                Forward: all
+            ViewerProtocolPolicy: redirect-to-https
+          PriceClass: PriceClass_All
+          ViewerCertificate:
+            # CloudFrontDefaultCertificate: 'true'
+            AcmCertificateArn: arn:aws:acm:us-east-1:693188760610:certificate/30b5db0f-396d-45ea-a2aa-20b50ec1f3e4
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.1_2016
+    FrontendDNSName:
+      Type: AWS::Route53::RecordSet
+      Properties:
+        HostedZoneName: ${self:custom.env.BASE_DOMAIN_NAME}.
+        Comment: CNAME redirect custom name to CloudFront distribution
+        Name: ${self:custom.env.DOMAIN_NAME}
+        Type: CNAME
+        TTL: '900'
+        ResourceRecords:
+        - Fn::GetAtt:
+          - FrontendCDN
+          - DomainName
+  Outputs:
+    CloudfrontEndpoint:
+      Value:
+        "Fn::GetAtt": [ FrontendCDN, DomainName ]
+      Description: Endpoint for Cloudfront distribution
+    Frontend:
+      Value:
+        Fn::Join:
+        - ''
+        - - https://
+          - Ref: FrontendDNSName
+      Description: Full frontend url
+    API:
+      Value: ${self:custom.env.API_DOMAIN_NAME}/api/
+      Description: Api Base URl

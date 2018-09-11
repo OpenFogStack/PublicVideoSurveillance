@@ -1,0 +1,58 @@
+FROM resin/rpi-raspbian:stretch
+
+RUN apt-get -y update && \
+    apt-get install -y --fix-missing \
+    build-essential \
+    cmake \
+    gfortran \
+    git \
+    wget \
+    curl \
+    graphicsmagick \
+    libpackagekit-glib2-18 \
+    gir1.2-packagekitglib-1.0 \
+    libgraphicsmagick1-dev \
+    libatlas-base-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libjpeg-dev \
+    liblapack-dev \
+    libswscale-dev \
+    libssl-dev \
+    nano \
+    pkg-config \
+    python3-pip \
+    python3-dev \
+    python3-numpy \
+    python3-picamera \
+    software-properties-common \
+    zip \
+    && apt-get clean && rm -rf /tmp/* /var/tmp/*
+
+RUN pip3 install --index-url https://www.piwheels.hostedpi.com/simple setuptools
+
+# Preinstall dependencies to prevent re-download on every file change
+RUN pip3 install --index-url https://www.piwheels.hostedpi.com/simple face_recognition_models Click dlib numpy Pillow scipy picamera[array] AWSIoTPythonSDK scikit-learn opencv-python isodate boto3 requests ffmpeg-python
+
+# Fix weird numpy error... (https://stackoverflow.com/questions/20518632/importerror-numpy-core-multiarray-failed-to-import)
+RUN pip3 install --upgrade --ignore-installed --index-url https://www.piwheels.hostedpi.com/simple numpy
+
+# Copy necessary files (face_recognition project & AWS IoT certificates)
+COPY . /root/face_recognition
+
+RUN cd /root/face_recognition && \
+    mkdir /root/face_recognition/data && \
+    ln -s /root/face_recognition/bin/ffmpeg /usr/local/bin/ffmpeg && \
+    pip3 install --index-url https://www.piwheels.hostedpi.com/simple -r requirements.txt && \
+    python3 setup.py install
+
+RUN mkdir /root/face_recognition/data
+
+ENV PATH="/root/face_recognition/bin:${PATH}"
+
+CMD cd /root/face_recognition && \
+    python3 start.py >> start.log
+
+
+
+

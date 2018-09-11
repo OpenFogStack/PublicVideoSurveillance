@@ -1,0 +1,39 @@
+FROM ubuntu:16.04
+
+RUN apt-get update
+RUN apt-get install curl -y
+RUN apt-get install -y python3-pip
+RUN apt-get install software-properties-common -y
+RUN add-apt-repository ppa:george-edison55/cmake-3.x -y
+RUN apt-get update
+RUN apt-get install cmake -y
+RUN pip3 install face_recognition
+RUN apt install awscli -y
+RUN pip3 install awscli --upgrade
+RUN apt-get update && apt-get install -y wget
+RUN pip3 install sklearn
+RUN pip3 install scipy
+RUN apt-get update
+
+#CMD mkdir pictures_fog; cd pictures_jog; aws s3 ls s3://fogcomp-test/pictures/%INPUT_POI_ID%/; mkdir results; cd results; echo "hello" > new_file.txt; aws s3 sync . s3://fogcomp-test/pictures/results/%INPUT_POI_ID%/; echo hallo
+CMD S3_FOLDER_POI=s3://$INPUT_BUCKET; \
+  S3_FOLDER_POI_RESULT=s3://$OUTPUT_BUCKET/; \
+  S3_FOLDER_POI_RESULT_REMOVE=s3://$OUTPUT_BUCKET; \
+  mkdir pictures_fog; cd pictures_fog; \
+  echo 'downloading poi-pictures from s3'; \
+  aws s3 sync $S3_FOLDER_POI .; \
+  rm -rf 'find -type d -name results'; \
+  rm -rf 'find -type d -name approvalworkflow'; \
+  cd ..; \
+  mkdir results; \
+  wget https://s3.eu-central-1.amazonaws.com/watch-your-faces-backend/face_recognition_knn_modified.py; \
+  python3 -c 'import face_recognition_knn_modified; face_recognition_knn_modified.train("./pictures_fog", model_save_path="./results/abc")'; \
+  echo 'preparing results'; \
+  cd results; \
+  aws s3 rm $S3_FOLDER_POI_RESULT_REMOVE --recursive; \
+  aws s3 sync . $S3_FOLDER_POI_RESULT; \
+  echo 'training model uploaded to s3'; \
+  cd ..; \
+  rm -rf results; \
+  rm -rf pictures_fog; \
+  echo 'Job is done';

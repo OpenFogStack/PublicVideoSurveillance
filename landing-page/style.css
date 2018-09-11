@@ -1,0 +1,214 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #338078;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+
+
+#page {
+  perspective: 1px;
+  transform-style: preserve-3d;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  max-height: 10vh;
+}
+
+#parallax {
+  margin: auto;
+  max-width: 90%;
+  text-align: center;
+  display: flex;
+  position: sticky;
+  height: 100vh;
+  transform: translateZ(-1px) scale(2);
+  z-index: -1;
+}
+
+#main {
+  height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  width: 100%;
+}
+
+#logo {
+  height: 9vh;
+  width: 9vh;
+  background-image: url(./assets/wyf-logo.png);
+  background-size: cover;
+}
+
+#logo:hover {
+  background-image: url(./assets/wyf-logo-hover.png);
+}
+
+#claim {
+  /*font-family: Lato, Open Sans, Arial, sans-serif;*/
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: 4em;
+  color: white;
+}
+
+#footer {
+  bottom: 0;
+  margin: 0;
+  width: 100%;
+  position: absolute;
+  text-align: center;
+  align-items: center;
+}
+
+#footer-image {
+  max-width: 100%;
+  max-height: 40vh;
+}
+
+#aboutpage {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+}
+
+#abouttext {
+  color: #717171;
+  width: 50%;
+  font-size: 1em;
+  font-family: Lato, Arial, sans-serif;
+  text-align: center;
+  z-index: 1000;
+}
+
+#team {
+  width: 100%;
+}
+
+#particles {
+  position: absolute;
+}
+
+#love {
+  font-family: "Lucida Console", Monaco, monospace;
+  width: 100%;
+  font-size:0.5em;
+}
+
+.textlink {
+  text-decoration: underline;
+  color: #717171;
+}
+
+@media screen and (orientation:portrait) {
+  a.button1{
+    width: 25vw;
+    line-height: 10vw;
+    font-size: 2vw;
+  }
+
+  #logo {
+    max-height: 25vw;
+  }
+
+  #main {
+    justify-content: space-around;
+  }
+
+  #abouttext {
+    font-size: 2em;
+    width: 80%;
+  }
+}
+
+a.button1{
+  display:inline-block;
+  padding:0.35em 1.2em;
+  border:0.1em solid #FFFFFF;
+  margin:0 0.3em 0.3em 0;
+  border-radius:0.12em;
+  box-sizing: border-box;
+  text-decoration:none;
+  font-weight:300;
+  color:#FFFFFF;
+  text-align:center;
+  transition: all 0.2s;
+}
+
+a.button1:hover{
+  color:#000000;
+  background-color:#FFFFFF;
+}
+
+@media all and (max-width:30em){
+  a.button1{
+    display:block;
+    margin:0.4em auto;
+  }
+}
+
+.container {
+  background: PaleGoldenRod;
+  height: 100vh;
+  padding: 20px;
+  text-align: center;
+}
+
+.content {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+}
+.content p {
+  margin: 0 0 20px;
+}
+
+/* Arrow & Hover Animation */
+#more-arrows {
+  width: 75px;
+  height: 65px;
+  -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+}
+#more-arrows:hover polygon {
+  fill: #FFF;
+  transition: all .2s ease-out;
+}
+#more-arrows:hover polygon.arrow-bottom {
+  -webkit-transform: translateY(-18px);
+          transform: translateY(-18px);
+}
+#more-arrows:hover polygon.arrow-top {
+  -webkit-transform: translateY(18px);
+          transform: translateY(18px);
+}
+
+polygon {
+  fill: #FFF;
+  transition: all .2s ease-out;
+}
+polygon.arrow-middle {
+  opacity: 0.75;
+}
+polygon.arrow-top {
+  opacity: 0.5;
+}
+
+rect.btn {
+  stroke:#fff;
+  fill:#fff;
+  fill-opacity:0;
+  stroke-opacity:0;
+}

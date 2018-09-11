@@ -1,0 +1,9 @@
+{
+    "edge-identifier": 2,
+    "edge-endpoint": "a95auszam8l8d.iot.eu-central-1.amazonaws.com",
+    "iot-ca-path": "certs/root-ca.pem",
+    "device-cert-path": "certs/cloud.pem.crt",
+    "device-pkey-path": "certs/cloud.pem.key",
+    "amazon-ca-path": "certs/AmazonRootCA1.pem",
+    "credential-provider-endpoint": "https://c1i2kr7g7asr7y.credentials.iot.eu-central-1.amazonaws.com/role-aliases/AWS-Service-Access-Role-Alias/credentials"
+}
