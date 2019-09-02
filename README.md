@@ -1,9 +1,24 @@
 ![wyf](frontend/assets/img/wyf-logo-transparent.png)
 [![Build Status](https://travis-ci.com/pwillmann/watch-your-face.svg?token=WrsXVexyxmLcbUDYVT99&branch=master)](https://travis-ci.com/pwillmann/watch-your-face)
 
+
 ## Documentation
 
-See this [link](https://www.overleaf.com/17842661znjmqtwkzggs#/67635918/)
+See this [documentation](https://www.overleaf.com/17842661znjmqtwkzggs#/67635918/)
+and [scientific paper](http://www.mcc.tu-berlin.de/fileadmin/fg344/publications/2018-11-01_surveillance_m4iot.pdf) for further information
+
+Bibtex entry for the paper:
+````
+@inproceedings{grambow_public_2018,
+	location = {Rennes, France},
+	title = {Public Video Surveillance: Using the Fog to Increase Privacy},
+	booktitle = {Proceedings of the 5th Workshop on Middleware and Applications for the Internet of Things (M4IoT 2018)},
+	publisher = {{ACM}},
+	author = {Grambow, Martin and Hasenburg, Jonathan and Bermbach, David},
+	year = {2018},
+	langid = {english}
+}
+````
 
 ## Setup
 
