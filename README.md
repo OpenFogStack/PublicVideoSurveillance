@@ -1,13 +1,17 @@
 ![wyf](frontend/assets/img/wyf-logo-transparent.png)
 [![Build Status](https://travis-ci.com/pwillmann/watch-your-face.svg?token=WrsXVexyxmLcbUDYVT99&branch=master)](https://travis-ci.com/pwillmann/watch-your-face)
 
+# [Watchyourfac.es]
+In public video surveillance, there is an inherent conflict between public safety goals and privacy needs of citizens. Generally, societies tend to decide on middleground solutions that sacrifice neither safety nor privacy goals completely. 
+Watchyourfac.es is a prototype that leverages the inherent geo-distribution of fog computing to preserve privacy of citizens while still supporting camera-based digital manhunts of law enforcement agencies.
 
-## Documentation
 
-See this [documentation](https://www.overleaf.com/17842661znjmqtwkzggs#/67635918/)
-and [scientific paper](http://www.mcc.tu-berlin.de/fileadmin/fg344/publications/2018-11-01_surveillance_m4iot.pdf) for further information
+If you use this software in a publication, please cite it as:
 
-Bibtex entry for the paper:
+### Text
+Martin Grambow, Jonathan Hasenburg, David Bermbach. **Public Video Surveillance: Using the Fog to Increase Privacy**. In: Proceedings of the 5th Workshop on Middleware and Applications for the Internet of Things (M4IoT 2018). ACM 2018.
+
+### BibTeX
 ````
 @inproceedings{grambow_public_2018,
 	location = {Rennes, France},
@@ -19,6 +23,22 @@ Bibtex entry for the paper:
 	langid = {english}
 }
 ````
+
+A full list of our [publications](https://www.mcc.tu-berlin.de/menue/forschung/publikationen/parameter/en/) and [prototypes](https://www.mcc.tu-berlin.de/menue/forschung/prototypes/parameter/en/) is available on our group website.
+
+## License
+
+<!-- The code in this repository is licensed under the terms of the [MIT](./LICENSE) license. -->
+<!-- The code in this repository is licensed under the terms of the [Apache 2.0](./LICENSE) license. -->
+<!-- The code in this repository is licensed under the terms of the [GPL-3.0](./LICENSE) license. -->
+
+## Instructions
+
+See this [documentation](https://www.overleaf.com/17842661znjmqtwkzggs#/67635918/)
+and [scientific paper](http://www.mcc.tu-berlin.de/fileadmin/fg344/publications/2018-11-01_surveillance_m4iot.pdf) for further information
+
+Bibtex entry for the paper:
+
 
 ## Setup
 
