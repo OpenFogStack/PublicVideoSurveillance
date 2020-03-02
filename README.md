@@ -1,7 +1,7 @@
 ![wyf](frontend/assets/img/wyf-logo-transparent.png)
 [![Build Status](https://travis-ci.com/pwillmann/watch-your-face.svg?token=WrsXVexyxmLcbUDYVT99&branch=master)](https://travis-ci.com/pwillmann/watch-your-face)
 
-# [Watchyourfac.es]
+# Watchyourfac.es
 In public video surveillance, there is an inherent conflict between public safety goals and privacy needs of citizens. Generally, societies tend to decide on middleground solutions that sacrifice neither safety nor privacy goals completely. 
 Watchyourfac.es is a prototype that leverages the inherent geo-distribution of fog computing to preserve privacy of citizens while still supporting camera-based digital manhunts of law enforcement agencies.
 
@@ -25,12 +25,6 @@ Martin Grambow, Jonathan Hasenburg, David Bermbach. **Public Video Surveillance:
 ````
 
 A full list of our [publications](https://www.mcc.tu-berlin.de/menue/forschung/publikationen/parameter/en/) and [prototypes](https://www.mcc.tu-berlin.de/menue/forschung/prototypes/parameter/en/) is available on our group website.
-
-## License
-
-<!-- The code in this repository is licensed under the terms of the [MIT](./LICENSE) license. -->
-<!-- The code in this repository is licensed under the terms of the [Apache 2.0](./LICENSE) license. -->
-<!-- The code in this repository is licensed under the terms of the [GPL-3.0](./LICENSE) license. -->
 
 ## Instructions
 
